@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Kos; // Memanggil model Kos yang kita buat tadi
+use Illuminate\Support\Facades\File;
 
 class SipkosController extends Controller
 {
@@ -63,7 +64,7 @@ class SipkosController extends Controller
         return view('booking_form', compact('kos'));
     }
 
-    // 4. PERBAIKAN: Mengubah nama fungsi agar sinkron dengan rute post transaksi booking
+    // 4. Mengubah nama fungsi agar sinkron dengan rute post transaksi booking
     public function storeBooking(Request $request, $id)
     {
         $kos = Kos::findOrFail($id);
@@ -72,10 +73,12 @@ class SipkosController extends Controller
         session([
             'last_booking' => [
                 'nama_kos' => $kos->nama,
-                'lokasi' => $kos->lokasi,    // Tetap simpan lokasi
-                'alamat' => $kos->alamat,    // <-- GANTI INI: ambil dari kolom alamat baru
+                'lokasi' => $kos->lokasi,
+                'alamat' => $kos->alamat,
                 'tipe_kamar' => $kos->tipe_kos,
                 'tanggal_checkin' => $request->tanggal_checkin,
+                'durasi' => $request->input('durasi', 1),
+                'jasa_pindahan' => $request->input('jasa_pindahan', 0),
                 'total_harga' => $totalHarga,
             ]
         ]);
@@ -117,8 +120,45 @@ class SipkosController extends Controller
             'tipe_kos' => 'required',
             'deskripsi' => 'required',
             'no_telepon' => 'required',
+            // Disamakan menggunakan 'foto_utama' sesuai nama atribut name di file admin.blade.php
+            'foto_utama' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'foto_2' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'foto_3' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
+        // 1. Tentukan jalur path folder tujuan & buat jika belum ada
+        $targetPath = public_path('foto-kos');
+        if (!File::exists($targetPath)) {
+            File::makeDirectory($targetPath, 0755, true, true);
+        }
+
+        // 2. Siapkan variabel penampung nama file foto (default null)
+        $namaFotoUtama = null;
+        $namaFoto2 = null;
+        $namaFoto3 = null;
+
+        // 3. Proses upload Foto Utama jika ada
+        if ($request->hasFile('foto_utama')) {
+            $file = $request->file('foto_utama');
+            $namaFotoUtama = time() . '_utama.' . $file->getClientOriginalExtension();
+            $file->move($targetPath, $namaFotoUtama);
+        }
+
+        // 4. Proses upload Foto Pendukung 1 jika ada
+        if ($request->hasFile('foto_2')) {
+            $file = $request->file('foto_2');
+            $namaFoto2 = time() . '_2.' . $file->getClientOriginalExtension();
+            $file->move($targetPath, $namaFoto2);
+        }
+
+        // 5. Proses upload Foto Pendukung 2 jika ada
+        if ($request->hasFile('foto_3')) {
+            $file = $request->file('foto_3');
+            $namaFoto3 = time() . '_3.' . $file->getClientOriginalExtension();
+            $file->move($targetPath, $namaFoto3);
+        }
+
+        // 6. Simpan seluruh data ke database
         Kos::create([
             'nama' => $request->nama,
             'lokasi' => $request->lokasi,
@@ -130,6 +170,9 @@ class SipkosController extends Controller
             'kamar_mandi_dalam' => $request->has('kamar_mandi_dalam') ? 1 : 0,
             'deskripsi' => $request->deskripsi,
             'no_telepon' => $request->no_telepon,
+            'foto' => $namaFotoUtama, // Tetap masuk ke kolom 'foto' lama di database
+            'foto_2' => $namaFoto2,   // Masuk ke kolom baru 'foto_2'
+            'foto_3' => $namaFoto3,   // Masuk ke kolom baru 'foto_3'
         ]);
 
         return redirect()->route('admin')->with('sukses', 'Kos Berhasil Ditambahkan!');
@@ -153,9 +196,63 @@ class SipkosController extends Controller
             'tipe_kos' => 'required',
             'deskripsi' => 'required',
             'no_telepon' => 'required',
+            // Validasi disesuaikan dengan nama input di admin_edit.blade.php
+            'foto_utama' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'foto_2' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'foto_3' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $kos = Kos::findOrFail($id);
+
+        // Default pakai nama foto yang sudah ada di database saat ini
+        $namaFotoUtama = $kos->foto;
+        $namaFoto2 = $kos->foto_2;
+        $namaFoto3 = $kos->foto_3;
+
+        $targetPath = public_path('foto-kos');
+
+        // Pastikan folder tujuan ada di public/foto-kos
+        if (!File::exists($targetPath)) {
+            File::makeDirectory($targetPath, 0755, true, true);
+        }
+
+        // 1. PROSES UPDATE FOTO UTAMA
+        if ($request->hasFile('foto_utama')) {
+            // Hapus foto utama lama jika ada di folder
+            if ($kos->foto && File::exists($targetPath . '/' . $kos->foto)) {
+                File::delete($targetPath . '/' . $kos->foto);
+            }
+
+            $file = $request->file('foto_utama');
+            $namaFotoUtama = time() . '_utama.' . $file->getClientOriginalExtension();
+            $file->move($targetPath, $namaFotoUtama);
+        }
+
+        // 2. PROSES UPDATE FOTO PENDUKUNG 1
+        if ($request->hasFile('foto_2')) {
+            // Hapus foto pendukung 1 lama jika ada di folder
+            if ($kos->foto_2 && File::exists($targetPath . '/' . $kos->foto_2)) {
+                File::delete($targetPath . '/' . $kos->foto_2);
+            }
+
+            $file = $request->file('foto_2');
+            $namaFoto2 = time() . '_2.' . $file->getClientOriginalExtension();
+            $file->move($targetPath, $namaFoto2);
+        }
+
+        // 3. PROSES UPDATE FOTO PENDUKUNG 2
+        if ($request->hasFile('foto_3')) {
+            // Hapus foto pendukung 2 lama jika ada di folder
+            if ($kos->foto_3 && File::exists($targetPath . '/' . $kos->foto_3)) {
+                File::delete($targetPath . '/' . $kos->foto_3);
+            }
+
+            $file = $request->file('foto_3');
+            $namaFoto3 = time() . '_3.' . $file->getClientOriginalExtension();
+            $file->move($targetPath, $namaFoto3);
+        }
+
+        // Eksekusi update data ke database
         $kos->update([
             'nama' => $request->nama,
             'lokasi' => $request->lokasi,
@@ -167,17 +264,24 @@ class SipkosController extends Controller
             'kamar_mandi_dalam' => $request->has('kamar_mandi_dalam') ? 1 : 0,
             'deskripsi' => $request->deskripsi,
             'no_telepon' => $request->no_telepon,
+            'foto' => $namaFotoUtama, // Kolom foto utama
+            'foto_2' => $namaFoto2,   // Kolom foto pendukung 1
+            'foto_3' => $namaFoto3,   // Kolom foto pendukung 2
         ]);
 
         return redirect()->route('admin')->with('sukses', 'Data Kos Berhasil Diperbarui!');
     }
-
     // 11. Fungsi Hapus Kos
     public function destroy($id)
     {
         $kos = Kos::findOrFail($id);
-        $kos->delete();
 
+        // Hapus foto fisik saat data kos dihapus
+        if ($kos->foto && file_exists(public_path('foto-kos/' . $kos->foto))) {
+            unlink(public_path('foto-kos/' . $kos->foto));
+        }
+
+        $kos->delete();
         return redirect()->route('admin')->with('sukses', 'Data Kos Berhasil Dihapus!');
     }
 }

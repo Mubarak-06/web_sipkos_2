@@ -13,7 +13,7 @@
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-left">
             <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-1">+ Tambah Properti Kos</h3>
 
-            <form action="{{ route('kos.store') }}" method="POST" class="space-y-4">
+            <form action="{{ route('kos.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <input type="text" name="nama" placeholder="Nama Kos" required
@@ -59,6 +59,26 @@
                     required
                     class="w-full px-4 py-2.5 rounded-xl bg-slate-100 outline-none text-sm border border-transparent focus:bg-white focus:border-blue-500 transition">
 
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 block">Foto Utama Kos (Wajib)</label>
+                        <input type="file" name="foto_utama" accept="image/*" required
+                            class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 block">Foto Pendukung 1 (Opsional)</label>
+                        <input type="file" name="foto_2" accept="image/*"
+                            class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 block">Foto Pendukung 2 (Opsional)</label>
+                        <input type="file" name="foto_3" accept="image/*"
+                            class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
+                    </div>
+                </div>
+
                 <button type="submit"
                     class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition">
                     Simpan Properti
@@ -71,10 +91,20 @@
 
             @forelse ($semuaKos as $kos)
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-                    <div>
-                        <span class="text-sm font-bold text-slate-700 block">{{ $kos->nama }}</span>
-                        <span class="text-xs text-slate-400 font-medium">{{ $kos->lokasi }} &bull; Rp
-                            {{ number_format($kos->harga, 0, ',', '.') }}/bln</span>
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex items-center justify-center shrink-0">
+                            @if($kos->foto)
+                                <img src="{{ asset('foto-kos/' . $kos->foto) }}" class="w-full h-full object-cover">
+                            @else
+                                <span class="text-[10px] text-slate-400 font-bold">No Pic</span>
+                            @endif
+                        </div>
+                        <div>
+                            <span class="text-sm font-bold text-slate-700 block">{{ $kos->nama }}</span>
+                            <span class="text-xs text-slate-400 font-medium">{{ $kos->lokasi }} &bull; Rp
+                                {{ number_format($kos->harga, 0, ',', '.') }}/bln</span>
+                        </div>
                     </div>
                     <div class="flex gap-2 text-xs font-bold shrink-0">
                         <a href="{{ route('kos.edit', $kos->id) }}"

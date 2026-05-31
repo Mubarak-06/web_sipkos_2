@@ -20,6 +20,9 @@ class Kos extends Model
         'wifi', 
         'kamar_mandi_dalam', 
         'deskripsi', 
-        'no_telepon'
+        'no_telepon',
+        'foto',
+        'foto_2',
+        'foto_3'
     ];
 }

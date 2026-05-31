@@ -30,6 +30,7 @@
                 </button>
             </div>
 
+            <!-- MODAL FILTER -->
             <div id="filterModal"
                 class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 transition-all animate-fade-in">
                 <div
@@ -42,7 +43,6 @@
                     </div>
 
                     <div class="p-6 space-y-6 overflow-y-auto flex-grow text-left">
-
                         <div class="space-y-3">
                             <label class="block text-xs font-black text-slate-400 uppercase tracking-wider">Kriteria
                                 Tambahan - Kost</label>
@@ -109,20 +109,16 @@
                                 </label>
                             </div>
                         </div>
-
                     </div>
 
                     <div class="p-4 border-t border-slate-100 bg-slate-50 flex gap-3 shrink-0">
                         <button type="button" id="btnResetModal"
-                            class="flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 transition">
-                            Reset Filter
-                        </button>
+                            class="flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 transition">Reset
+                            Filter</button>
                         <button type="submit"
-                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-3 rounded-xl shadow-md transition">
-                            Tampilkan Hasil
-                        </button>
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-3 rounded-xl shadow-md transition">Tampilkan
+                            Hasil</button>
                     </div>
-
                 </div>
             </div>
         </form>
@@ -134,37 +130,54 @@
         </h2>
     </div>
 
+    <!-- DAFTAR KOS GRID -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @forelse ($semuaKos as $kos)
             <div
                 class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition duration-300 flex flex-col">
-                <div class="bg-slate-200 h-48 w-full flex items-center justify-center text-slate-400 font-bold tracking-wide">
-                    Gambar Kos
+
+                <!-- PERBAIKAN: Ditambahkan overflow-hidden dan penataan w-full h-full object-cover -->
+                <div class="h-48 bg-slate-100 overflow-hidden relative shrink-0 rounded-t-2xl">
+                    @if($kos->foto)
+                        <!-- w-full h-full object-cover akan memaksa gambar memenuhi boks secara proporsional -->
+                        <img src="{{ asset('foto-kos/' . $kos->foto) }}" alt="{{ $kos->nama }}"
+                            class="w-full h-full object-cover object-center">
+                    @else
+                        <div class="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-400">
+                            <span>🏠</span>
+                            <span class="text-xs font-semibold">Belum ada foto</span>
+                        </div>
+                    @endif
                 </div>
 
-                <div class="p-5 border-b border-slate-100 flex-grow space-y-2 text-left">
-                    <div class="flex items-center justify-between">
-                        <span
-                            class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider 
-                                    {{ $kos->tipe_kos == 'Pria' ? 'bg-blue-50 text-blue-600' : ($kos->tipe_kos == 'Wanita' ? 'bg-pink-50 text-pink-600' : 'bg-purple-50 text-purple-600') }}">
-                            {{ $kos->tipe_kos }}
-                        </span>
-                        <span class="text-xs font-bold text-slate-400">{{ $kos->lokasi }}</span>
+                <div class="p-5 border-b border-slate-100 flex-grow space-y-2 text-left flex flex-col justify-between">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider 
+                                                                {{ $kos->tipe_kos == 'Pria' ? 'bg-blue-50 text-blue-600' : ($kos->tipe_kos == 'Wanita' ? 'bg-pink-50 text-pink-600' : 'bg-purple-50 text-purple-600') }}">
+                                {{ $kos->tipe_kos }}
+                            </span>
+                            <span class="text-xs font-bold text-slate-400">{{ $kos->lokasi }}</span>
+                        </div>
+
+                        <h3 class="font-bold text-base text-slate-800 line-clamp-1">{{ $kos->nama }}</h3>
+                        <p class="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2 h-8">{{ $kos->alamat }}</p>
                     </div>
 
-                    <h3 class="font-bold text-base text-slate-800">{{ $kos->nama }}</h3>
-                    <p class="text-xs text-slate-500 font-medium leading-relaxed">{{ $kos->alamat }}</p>
-                    <p class="text-sm font-black text-blue-600">Rp {{ number_format($kos->harga, 0, ',', '.') }} <span
-                            class="text-[10px] text-slate-400 font-medium">/ bulan</span></p>
+                    <div class="space-y-2 pt-2">
+                        <p class="text-sm font-black text-blue-600">Rp {{ number_format($kos->harga, 0, ',', '.') }} <span
+                                class="text-[10px] text-slate-400 font-medium">/ bulan</span></p>
 
-                    <div class="flex gap-2 pt-1 text-[10px] font-semibold text-slate-400">
-                        @if($kos->ac) <span>❄️ AC</span> @endif
-                        @if($kos->wifi) <span>🌐 Wifi</span> @endif
-                        @if($kos->kamar_mandi_dalam) <span>🚿 K.Mandi</span> @endif
+                        <div class="flex gap-2 text-[10px] font-semibold text-slate-400 h-4 items-center">
+                            @if($kos->ac) <span>❄️ AC</span> @endif
+                            @if($kos->wifi) <span>🌐 Wifi</span> @endif
+                            @if($kos->kamar_mandi_dalam) <span>🚿 K.Mandi</span> @endif
+                        </div>
                     </div>
                 </div>
 
-                <div class="p-4 bg-slate-50">
+                <div class="p-4 bg-slate-50 shrink-0">
                     <a href="{{ route('kos.show', $kos->id) }}"
                         class="block text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition text-xs tracking-wider uppercase">
                         Lihat Detail Kos
@@ -185,24 +198,9 @@
         const filterModal = document.getElementById('filterModal');
         const btnResetModal = document.getElementById('btnResetModal');
 
-        // 1. Fungsi Buka Modal
-        btnOpenFilter.addEventListener('click', () => {
-            filterModal.classList.remove('hidden');
-        });
-
-        // 2. Fungsi Tutup Modal
-        btnCloseFilter.addEventListener('click', () => {
-            filterModal.classList.add('hidden');
-        });
-
-        // Close modal jika area luar kotak putih diklik
-        filterModal.addEventListener('click', (e) => {
-            if (e.target === filterModal) {
-                filterModal.classList.add('hidden');
-            }
-        });
-
-        // 3. Fungsi Reset Pilihan di Dalam Modal
+        btnOpenFilter.addEventListener('click', () => { filterModal.classList.remove('hidden'); });
+        btnCloseFilter.addEventListener('click', () => { filterModal.classList.add('hidden'); });
+        filterModal.addEventListener('click', (e) => { if (e.target === filterModal) { filterModal.classList.add('hidden'); } });
         btnResetModal.addEventListener('click', () => {
             document.querySelectorAll('input[name="tipe_kos"]').forEach(radio => radio.checked = false);
             document.querySelector('select[name="harga_maksimal"]').value = "";
