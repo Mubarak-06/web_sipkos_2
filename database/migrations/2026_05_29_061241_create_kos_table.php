@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('nama');
             $table->string('lokasi');
+            $table->text('alamat'); // <-- Pindahan dari migration kedua
             $table->integer('harga');
             $table->string('tipe_kos'); // Menyimpan: Pria, Wanita, atau Campur
 
@@ -23,6 +24,13 @@ return new class extends Migration {
             $table->boolean('kamar_mandi_dalam')->default(0);
 
             $table->text('deskripsi');
+            $table->string('no_telepon'); // <-- Pindahan dari migration kedua
+            
+            // Kolom Foto-foto (nullable agar opsional saat input)
+            $table->string('foto')->nullable();   // <-- Pindahan dari migration kedua
+            $table->string('foto_2')->nullable(); // <-- Pindahan dari migration kedua
+            $table->string('foto_3')->nullable(); // <-- Pindahan dari migration kedua
+            
             $table->timestamps();
         });
     }
