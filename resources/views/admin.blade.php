@@ -86,49 +86,110 @@
             </form>
         </div>
 
-        <div class="space-y-3 text-left">
-            <h4 class="text-sm font-bold text-slate-800 ml-1">Daftar Kos Aktif</h4>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h4 class="text-lg font-bold text-slate-800 mb-4">
+                Daftar Kos Aktif
+            </h4>
 
-            @forelse ($semuaKos as $kos)
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex items-center justify-center shrink-0">
-                            @if($kos->foto)
-                                <img src="{{ asset('foto-kos/' . $kos->foto) }}" class="w-full h-full object-cover">
-                            @else
-                                <span class="text-[10px] text-slate-400 font-bold">No Pic</span>
-                            @endif
-                        </div>
-                        <div>
-                            <span class="text-sm font-bold text-slate-700 block">{{ $kos->nama }}</span>
-                            <span class="text-xs text-slate-400 font-medium">{{ $kos->lokasi }} &bull; Rp
-                                {{ number_format($kos->harga, 0, ',', '.') }}/bln</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 text-xs font-bold shrink-0">
-                        <a href="{{ route('kos.edit', $kos->id) }}"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg transition inline-block text-center shadow-sm">
-                            Edit
-                        </a>
+            <table id="tabelKos" class="display responsive nowrap w-full">
+                <thead>
+                    <tr>
+                        <th>Foto</th>
+                        <th>Nama Kos</th>
+                        <th>Lokasi</th>
+                        <th>Tipe</th>
+                        <th>Harga</th>
+                        <th>Fasilitas</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
 
-                        <form action="{{ route('kos.destroy', $kos->id) }}" method="POST"
-                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus kos ini?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg transition shadow-sm">
-                                Hapus
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            @empty
-                <div
-                    class="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-sm text-slate-400 font-medium">
-                    Belum ada data kos di database. Silakan tambah data di atas!
-                </div>
-            @endforelse
+                <tbody>
+                    @foreach($semuaKos as $kos)
+                        <tr>
+
+                            <td>
+                                @if($kos->foto)
+                                    <img src="{{ asset('foto-kos/' . $kos->foto) }}" width="60" class="rounded">
+                                @endif
+                            </td>
+
+                            <td>{{ $kos->nama }}</td>
+
+                            <td>{{ $kos->lokasi }}</td>
+
+                            <td>{{ $kos->tipe_kos }}</td>
+
+                            <td>
+                                Rp {{ number_format($kos->harga, 0, ',', '.') }}
+                            </td>
+
+                            <td>
+                                @if($kos->ac)
+                                    AC<br>
+                                @endif
+
+                                @if($kos->wifi)
+                                    Wifi<br>
+                                @endif
+
+                                @if($kos->kamar_mandi_dalam)
+                                    KM Dalam
+                                @endif
+                            </td>
+
+                            <td>
+                                <div class="flex gap-2">
+
+                                    <a href="{{ route('kos.edit', $kos->id) }}"
+                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
+                                        Edit
+                                    </a>
+
+                                    <form action="{{ route('kos.destroy', $kos->id) }}" method="POST"
+                                        onsubmit="return confirm('Yakin hapus data?')">
+
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit"
+                                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
+                                            Hapus
+                                        </button>
+
+                                    </form>
+
+                                </div>
+                            </td>
+
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
+    @section('scripts')
+        <script>
+            $(document).ready(function () {
+
+                $('#tabelKos').DataTable({
+                    responsive: true,
+                    pageLength: 5,
+
+                    language: {
+                        search: "Cari Kos:",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                        zeroRecords: "Data tidak ditemukan",
+
+                        paginate: {
+                            previous: "Sebelumnya",
+                            next: "Berikutnya"
+                        }
+                    }
+                });
+
+            });
+        </script>
+    @endsection
 @endsection

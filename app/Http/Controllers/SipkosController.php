@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Kos; // Memanggil model Kos yang kita buat tadi
+use App\Models\Kos;
 use Illuminate\Support\Facades\File;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SipkosController extends Controller
 {
@@ -283,5 +284,19 @@ class SipkosController extends Controller
 
         $kos->delete();
         return redirect()->route('admin')->with('sukses', 'Data Kos Berhasil Dihapus!');
+    }
+
+    public function downloadBookingPdf()
+    {
+        $booking = session('last_booking');
+
+        if (!$booking) {
+            return redirect()->route('my.bookings')
+                ->with('error', 'Tidak ada data booking.');
+        }
+
+        $pdf = Pdf::loadView('booking_pdf', compact('booking'));
+
+        return $pdf->download('booking-kos.pdf');
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 // ==========================================
 // RUTE UTAMA NAVIGASI SIPKOS (CUSTOMER SIDE)
 // ==========================================
-
+Route::get('/booking/pdf', [SipkosController::class, 'downloadBookingPdf'])->name('booking.pdf');
 // 1. Halaman Utama - diarahkan ke method 'index'
 Route::get('/', [SipkosController::class, 'index'])->name('home');
 
@@ -20,8 +20,10 @@ Route::get('/booking/{id}', [SipkosController::class, 'bookingForm'])->name('kos
 // 4. Proses Simpan Booking ke Session - diarahkan ke method 'prosesBooking'
 Route::post('/booking/{id}', [SipkosController::class, 'storeBooking'])->name('booking.store');
 
+
 // 5. Halaman Riwayat Sesi Booking Anda - diarahkan ke method 'myBookings'
 Route::get('/my-bookings', [SipkosController::class, 'myBookings'])->name('my.bookings');
+
 
 
 // ==========================================
