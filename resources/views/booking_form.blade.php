@@ -36,21 +36,60 @@
             </div>
 
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <h3 class="font-bold text-base text-slate-800">Layanan Bantuan Pindahan</h3>
+
+                <h3 class="font-bold text-base text-slate-800">
+                    Layanan Bantuan Pindahan
+                </h3>
 
                 <label
-                    class="flex items-center justify-between p-4 bg-slate-50 rounded-xl cursor-pointer border border-slate-200 hover:bg-slate-100 transition duration-200">
-                    <div class="space-y-0.5">
-                        <p class="text-sm font-bold text-slate-700">Tambah Armada / Jasa Pindahan</p>
-                        <p class="text-xs text-slate-400 font-medium">Bantuan pengangkutan barang langsung ke lokasi kos
-                            baru oleh tim kami.</p>
+                    class="flex items-center justify-between p-4 bg-slate-50 rounded-xl cursor-pointer border border-slate-200">
+
+                    <div>
+                        <p class="text-sm font-bold text-slate-700">
+                            Gunakan Jasa Pindahan
+                        </p>
+
+                        <p class="text-xs text-slate-400">
+                            Pilih layanan pindahan yang tersedia.
+                        </p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm font-black text-blue-600">+ Rp 100.000</span>
-                        <input type="checkbox" id="checkJasaPindah" name="jasa_pindahan_checkbox"
-                            class="w-5 h-5 text-blue-500 rounded border-slate-300 focus:ring-blue-500">
-                    </div>
+
+                    <input type="checkbox" id="checkJasaPindah" class="w-5 h-5 text-blue-500 rounded">
                 </label>
+
+                <div id="pilihanJasaContainer" class="hidden">
+
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">
+                        Pilih Jasa
+                    </label>
+
+                    <select id="pilihanJasa" name="nama_jasa_pindahan"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-3">
+
+                        <option value="">
+                            -- Pilih Jasa --
+                        </option>
+
+                        <option value="Jasa Pindahan SIPKOS">
+                            Jasa Pindahan SIPKOS
+                        </option>
+
+                        <option value="Jasa Pindahan Express">
+                            Jasa Pindahan Express
+                        </option>
+
+                        <option value="Jasa Angkut Motor">
+                            Jasa Angkut Motor
+                        </option>
+
+                        <option value="Jasa Pick Up">
+                            Jasa Pick Up
+                        </option>
+
+                    </select>
+
+                </div>
+
             </div>
         </div>
 
@@ -267,15 +306,30 @@
             });
         });
 
+        const pilihanJasaContainer = document.getElementById('pilihanJasaContainer');
+        const pilihJasa = document.getElementById('pilihanJasa');
+
         checkJasaPindah.addEventListener('change', function () {
-            rowJasaPindah.style.display = this.checked ? 'flex' : 'none';
+
+            rowJasaPindah.style.display =
+                this.checked ? 'flex' : 'none';
+
+            pilihanJasaContainer.classList.toggle(
+                'hidden',
+                !this.checked
+            );
+
             hitungTotal();
         });
 
         // Alur Pop-up Tampilkan Modal Konfirmasi Ringkasan
         btnPemicuKonfirmasi.addEventListener('click', function () {
+            if (checkJasaPindah.checked && !pilihJasa.value) {
+                alert('Silakan pilih jasa pindahan terlebih dahulu.');
+                return;
+            }
             document.getElementById('confDurasi').innerText = durasiAktif + " Bulan";
-            document.getElementById('confPindah').innerText = checkJasaPindah.checked ? "Ya (+Rp 100.000)" : "Tidak";
+            document.getElementById('confPindah').innerText = checkJasaPindah.checked ? pilihJasa.value : "Tidak";
             document.getElementById('confTotal').innerText = txtTotalBayar.innerText;
             modalKonfirmasi.classList.remove('hidden');
         });
@@ -286,12 +340,19 @@
 
         // Trigger Eksekusi Akhir Kirim Form (Fetch API Bawaan)
         btnKirimBookingFix.addEventListener('click', function () {
+            if (checkJasaPindah.checked && !pilihJasa.value) {
+                alert('Silakan pilih jasa pindahan terlebih dahulu.');
+                return;
+            }
             modalKonfirmasi.classList.add('hidden');
 
             const formData = new FormData(formBookingReal);
             formData.append('durasi', durasiAktif);
             formData.append('jasa_pindahan', checkJasaPindah.checked ? 1 : 0);
-
+            formData.append(
+                'nama_jasa_pindahan',
+                document.getElementById('pilihanJasa').value
+            );
             // MEMBAWA PARAMETER ID KOS DENGAN BENAR AGAR TIDAK GENERATION ERROR 500
             fetch("{{ route('booking.store', $kos->id) }}", {
                 method: "POST",
@@ -318,7 +379,7 @@
                         document.getElementById('btnHubungiWa').href =
                             "https://wa.me/" + rawPhone + "?text=" + templatePesanPemilik;
 
-                        // WA Jasa Pindahan
+                        const namaJasa = document.getElementById('pilihanJasa').value;
                         const jasaPindahanWA = "6285650816792";
 
                         const txtNoWaPindahan = document.getElementById('txtNoWaPindahan');
@@ -329,7 +390,7 @@
                             txtNoWaPindahan.classList.remove('hidden');
 
                             const templatePesanJasa = encodeURIComponent(
-                                `Halo, saya membutuhkan jasa pindahan untuk booking kos "{{ $kos->nama }}".`
+                                `Halo, saya membutuhkan layanan "${namaJasa}" untuk membantu pindahan ke kos "{{ $kos->nama }}".`
                             );
 
                             btnHubungiJasa.href =

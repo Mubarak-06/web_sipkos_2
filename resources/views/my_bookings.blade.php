@@ -2,7 +2,8 @@
 
 @section('content')
     <div class="min-h-[80vh] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl border border-slate-100 p-8 space-y-8 animate-fade-in text-left">
+        <div
+            class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl border border-slate-100 p-8 space-y-8 animate-fade-in text-left">
 
             <div class="text-center border-b pb-4">
                 <h3 class="text-lg font-black text-slate-800 tracking-wider uppercase">Detail Booking</h3>
@@ -26,7 +27,8 @@
                     <div class="space-y-1">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tipe Kost</label>
                         <div>
-                            <span class="inline-block px-2.5 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-black uppercase tracking-wide">
+                            <span
+                                class="inline-block px-2.5 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-black uppercase tracking-wide">
                                 Kost {{ session('last_booking.tipe_kamar') ?? 'Campur' }}
                             </span>
                         </div>
@@ -47,10 +49,19 @@
                     </div>
 
                     <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Layanan Tambahan</label>
-                        <p class="text-sm font-bold {{ session('last_booking.jasa_pindahan') ? 'text-blue-600' : 'text-slate-500' }}">
-                            {{ session('last_booking.jasa_pindahan') ? 'Termasuk Jasa Pindahan (+Rp 100.000)' : 'Tanpa Jasa Pindahan' }}
-                        </p>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                            Layanan Tambahan
+                        </label>
+
+                        @if(session('last_booking.jasa_pindahan'))
+                            <p class="text-sm font-bold text-blue-600">
+                                {{ session('last_booking.nama_jasa_pindahan') }}
+                            </p>
+                        @else
+                            <p class="text-sm font-bold text-slate-500">
+                                Tanpa Jasa Pindahan
+                            </p>
+                        @endif
                     </div>
 
                     <div class="space-y-1 pt-3 border-t border-dashed border-slate-200">
@@ -69,7 +80,8 @@
                 </div>
             @else
                 <div class="text-center py-8 space-y-4">
-                    <div class="w-16 h-16 bg-slate-50 mx-auto rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
+                    <div
+                        class="w-16 h-16 bg-slate-50 mx-auto rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round"

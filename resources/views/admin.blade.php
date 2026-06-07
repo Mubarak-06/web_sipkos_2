@@ -167,29 +167,92 @@
                 </tbody>
             </table>
         </div>
+        <div class="mt-10">
+            <h4 class="text-sm font-bold text-slate-800 mb-3">
+                Data Booking Masuk
+            </h4>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="p-3 text-left">Kos</th>
+                            <th class="p-3 text-left">Check In</th>
+                            <th class="p-3 text-left">Durasi</th>
+                            <th class="p-3 text-left">Jasa Pindahan</th>
+                            <th class="p-3 text-left">Total</th>
+                            <th class="p-3 text-left">Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @forelse($semuaBooking as $booking)
+                            <tr class="border-t">
+                                <td class="p-3">
+                                    {{ $booking->kos->nama }}
+                                </td>
+
+                                <td class="p-3">
+                                    {{ $booking->tanggal_checkin }}
+                                </td>
+
+                                <td class="p-3">
+                                    {{ $booking->durasi }} Bulan
+                                </td>
+
+                                <td class="p-3">
+                                    @if($booking->jasa_pindahan)
+                                        {{ $booking->nama_jasa_pindahan }}
+                                    @else
+                                        Tidak
+                                    @endif
+                                </td>
+
+                                <td class="p-3">
+                                    Rp {{ number_format($booking->total_harga, 0, ',', '.') }}
+                                </td>
+
+                                <td class="p-3">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                                        Booking Masuk
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="p-4 text-center text-slate-400">
+                                    Belum ada booking.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    @section('scripts')
-        <script>
-            $(document).ready(function () {
+@endsection
 
-                $('#tabelKos').DataTable({
-                    responsive: true,
-                    pageLength: 5,
+@section('scripts')
+    <script>
+        $(document).ready(function () {
 
-                    language: {
-                        search: "Cari Kos:",
-                        lengthMenu: "Tampilkan _MENU_ data",
-                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-                        zeroRecords: "Data tidak ditemukan",
+            $('#tabelKos').DataTable({
+                responsive: true,
+                pageLength: 5,
 
-                        paginate: {
-                            previous: "Sebelumnya",
-                            next: "Berikutnya"
-                        }
+                language: {
+                    search: "Cari Kos:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                    zeroRecords: "Data tidak ditemukan",
+
+                    paginate: {
+                        previous: "Sebelumnya",
+                        next: "Berikutnya"
                     }
-                });
-
+                }
             });
-        </script>
-    @endsection
+
+        });
+    </script>
 @endsection

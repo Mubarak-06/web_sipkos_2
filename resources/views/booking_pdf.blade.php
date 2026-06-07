@@ -144,7 +144,7 @@
             <tr>
                 <th>Jasa Pindahan</th>
                 <td>
-                    {{ $booking['jasa_pindahan'] ? 'Ya' : 'Tidak' }}
+                    {{ $booking['nama_jasa_pindahan'] ?? 'Tidak Menggunakan Jasa Pindahan' }}
                 </td>
             </tr>
 
@@ -152,7 +152,7 @@
                 <th>Status</th>
                 <td>
                     <span class="status">
-                        Menunggu Konfirmasi Pemilik
+                        Silakan Hubungi Pemilik Kos untuk Konfirmasi
                     </span>
                 </td>
             </tr>

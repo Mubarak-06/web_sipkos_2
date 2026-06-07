@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Kos;
+use App\Models\Booking;
 use Illuminate\Support\Facades\File;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -71,6 +72,16 @@ class SipkosController extends Controller
         $kos = Kos::findOrFail($id);
         $totalHarga = $request->input('total_harga_input', $kos->harga);
 
+        Booking::create([
+            'kos_id' => $kos->id,
+            'tanggal_checkin' => $request->tanggal_checkin,
+            'durasi' => $request->input('durasi', 1),
+            'jasa_pindahan' => $request->input('jasa_pindahan', 0),
+            'nama_jasa_pindahan' => $request->input('nama_jasa_pindahan'),
+            'total_harga' => $totalHarga,
+            'status' => 'pending'
+        ]);
+
         session([
             'last_booking' => [
                 'nama_kos' => $kos->nama,
@@ -80,6 +91,7 @@ class SipkosController extends Controller
                 'tanggal_checkin' => $request->tanggal_checkin,
                 'durasi' => $request->input('durasi', 1),
                 'jasa_pindahan' => $request->input('jasa_pindahan', 0),
+                'nama_jasa_pindahan' => $request->input('nama_jasa_pindahan'),
                 'total_harga' => $totalHarga,
             ]
         ]);
@@ -107,7 +119,15 @@ class SipkosController extends Controller
     public function admin()
     {
         $semuaKos = Kos::all();
-        return view('admin', compact('semuaKos'));
+
+        $semuaBooking = Booking::with('kos')
+            ->latest()
+            ->get();
+
+        return view('admin', compact(
+            'semuaKos',
+            'semuaBooking'
+        ));
     }
 
     // 8. Fungsi Simpan Kos Baru dari Form Admin
