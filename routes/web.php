@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\SipkosController;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\ChatbotController;
 // ==========================================
 // RUTE UTAMA NAVIGASI SIPKOS (CUSTOMER SIDE)
 // ==========================================
@@ -24,6 +24,7 @@ Route::post('/booking/{id}', [SipkosController::class, 'storeBooking'])->name('b
 // 5. Halaman Riwayat Sesi Booking Anda - diarahkan ke method 'myBookings'
 Route::get('/my-bookings', [SipkosController::class, 'myBookings'])->name('my.bookings');
 
+Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
 
 
 // ==========================================
@@ -45,4 +46,5 @@ Route::prefix('admin')->group(function () {
     
     // Proses Hapus Data Kos
     Route::delete('/kos/{id}', [SipkosController::class, 'destroy'])->name('kos.destroy');
+
 });
