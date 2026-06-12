@@ -12,6 +12,8 @@ class Kos extends Model
     protected $fillable = [
         'nama',
         'lokasi',
+        'latitude',
+        'longitude',
         'alamat',
         'harga',
         'tipe_kos',
@@ -27,6 +29,6 @@ class Kos extends Model
 
     public function bookings()
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasMany(Booking::class, 'id_kos', 'id');
     }
 }

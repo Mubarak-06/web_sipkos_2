@@ -7,10 +7,10 @@ use App\Models\Kos;
 use App\Models\Booking;
 use Illuminate\Support\Facades\File;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class SipkosController extends Controller
 {
-    // 1. Tampilan Utama Pencarian Kos
     public function index(Request $request)
     {
         $query = Kos::query();
@@ -18,7 +18,8 @@ class SipkosController extends Controller
         if ($request->filled('keyword')) {
             $query->where(function ($q) use ($request) {
                 $q->where('nama', 'like', '%' . $request->keyword . '%')
-                    ->orWhere('lokasi', 'like', '%' . $request->keyword . '%');
+                    ->orWhere('lokasi', 'like', '%' . $request->keyword . '%')
+                    ->orWhere('alamat', 'like', '%' . $request->keyword . '%');
             });
         }
 
@@ -42,11 +43,11 @@ class SipkosController extends Controller
             $query->where('kamar_mandi_dalam', 1);
         }
 
-        $semuaKos = $query->get();
+        $semuaKos = $query->latest()->get();
+
         return view('home', compact('semuaKos'));
     }
 
-    // 2. Tampilan Detail Kos
     public function show($id)
     {
         $kos = Kos::findOrFail($id);
@@ -59,130 +60,160 @@ class SipkosController extends Controller
         return view('detail', compact('kos', 'rekomendasi'));
     }
 
-    // 3. Tampilan Formulir Booking Kos
     public function bookingForm($id)
     {
         $kos = Kos::findOrFail($id);
+
         return view('booking_form', compact('kos'));
     }
 
-    // 4. Mengubah nama fungsi agar sinkron dengan rute post transaksi booking
     public function storeBooking(Request $request, $id)
     {
+        $request->validate([
+            'tanggal_checkin' => 'required|date',
+            'durasi' => 'required|integer|min:1',
+            'jasa_pindahan' => 'nullable|in:0,1',
+            'nama_jasa_pindahan' => 'nullable|string|max:100',
+            'metode_pembayaran' => 'required|in:qris,dana,transfer_bank',
+            'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ], [
+            'tanggal_checkin.required' => 'Tanggal check-in wajib diisi.',
+            'metode_pembayaran.required' => 'Metode pembayaran wajib dipilih.',
+            'bukti_pembayaran.required' => 'Bukti pembayaran wajib diupload.',
+            'bukti_pembayaran.image' => 'Bukti pembayaran harus berupa gambar.',
+            'bukti_pembayaran.max' => 'Ukuran bukti pembayaran maksimal 2MB.',
+        ]);
+
         $kos = Kos::findOrFail($id);
-        $totalHarga = $request->input('total_harga_input', $kos->harga);
+
+        $durasi = (int) $request->input('durasi', 1);
+        $jasaPindahan = (int) $request->input('jasa_pindahan', 0);
+
+        if ($jasaPindahan === 1 && !$request->filled('nama_jasa_pindahan')) {
+            return response()->json([
+                'message' => 'Silakan pilih jasa pindahan terlebih dahulu.',
+                'errors' => [
+                    'nama_jasa_pindahan' => ['Silakan pilih jasa pindahan terlebih dahulu.']
+                ]
+            ], 422);
+        }
+
+        $biayaJasaPindahan = $jasaPindahan === 1 ? 100000 : 0;
+        $totalHarga = ($kos->harga * $durasi) + $biayaJasaPindahan;
+
+        $folderBukti = public_path('bukti-pembayaran');
+
+        if (!File::exists($folderBukti)) {
+            File::makeDirectory($folderBukti, 0755, true, true);
+        }
+
+        $namaBukti = null;
+
+        if ($request->hasFile('bukti_pembayaran')) {
+            $file = $request->file('bukti_pembayaran');
+            $namaBukti = time() . '_' . uniqid() . '_bukti.' . $file->getClientOriginalExtension();
+            $file->move($folderBukti, $namaBukti);
+        }
+
+        $kodeBooking = 'SIP-' . date('Ymd') . '-' . strtoupper(Str::random(5));
 
         Booking::create([
+            'kode_booking' => $kodeBooking,
             'kos_id' => $kos->id,
             'tanggal_checkin' => $request->tanggal_checkin,
-            'durasi' => $request->input('durasi', 1),
-            'jasa_pindahan' => $request->input('jasa_pindahan', 0),
-            'nama_jasa_pindahan' => $request->input('nama_jasa_pindahan'),
+            'durasi' => $durasi,
+            'jasa_pindahan' => $jasaPindahan,
+            'nama_jasa_pindahan' => $jasaPindahan ? $request->input('nama_jasa_pindahan') : null,
             'total_harga' => $totalHarga,
-            'status' => 'pending'
+            'metode_pembayaran' => $request->metode_pembayaran,
+            'status_pembayaran' => 'Menunggu Verifikasi Admin',
+            'bukti_pembayaran' => $namaBukti,
+            'status' => 'pending',
         ]);
 
         session([
             'last_booking' => [
+                'kode_booking' => $kodeBooking,
                 'nama_kos' => $kos->nama,
                 'lokasi' => $kos->lokasi,
                 'alamat' => $kos->alamat,
                 'tipe_kamar' => $kos->tipe_kos,
                 'tanggal_checkin' => $request->tanggal_checkin,
-                'durasi' => $request->input('durasi', 1),
-                'jasa_pindahan' => $request->input('jasa_pindahan', 0),
-                'nama_jasa_pindahan' => $request->input('nama_jasa_pindahan'),
+                'durasi' => $durasi,
+                'jasa_pindahan' => $jasaPindahan,
+                'nama_jasa_pindahan' => $jasaPindahan ? $request->input('nama_jasa_pindahan') : null,
                 'total_harga' => $totalHarga,
-            ]
+                'metode_pembayaran' => $request->metode_pembayaran,
+                'status_pembayaran' => 'Menunggu Verifikasi Admin',
+                'bukti_pembayaran' => $namaBukti,
+            ],
         ]);
 
         return response()->json([
             'status' => 'success',
-            'no_wa' => $kos->no_telepon
+            'kode_booking' => $kodeBooking,
+            'no_wa' => $kos->no_telepon,
+            'metode_pembayaran' => $request->metode_pembayaran,
+            'status_pembayaran' => 'Menunggu Verifikasi Admin',
+            'total_harga' => $totalHarga,
         ]);
     }
 
-    // 5. Tampilan Riwayat / Ringkasan Booking
     public function myBookings()
     {
         $booking = session('last_booking');
+
         return view('my_bookings', compact('booking'));
     }
 
-    // 6. Tampilan Konfirmasi Kontak Pemilik Kos
     public function konfirmasi()
     {
         return view('konfirmasi');
     }
 
-    // 7. Tampilan Dashboard Admin
     public function admin()
     {
-        $semuaKos = Kos::all();
+        $semuaKos = Kos::latest()->get();
 
         $semuaBooking = Booking::with('kos')
             ->latest()
             ->get();
 
-        return view('admin', compact(
-            'semuaKos',
-            'semuaBooking'
-        ));
+        return view('admin', compact('semuaKos', 'semuaBooking'));
     }
 
-    // 8. Fungsi Simpan Kos Baru dari Form Admin
     public function store(Request $request)
     {
         $request->validate([
-            'nama' => 'required',
-            'lokasi' => 'required',
-            'alamat' => 'required',
-            'harga' => 'required|numeric',
-            'tipe_kos' => 'required',
-            'deskripsi' => 'required',
-            'no_telepon' => 'required',
-            // Disamakan menggunakan 'foto_utama' sesuai nama atribut name di file admin.blade.php
-            'foto_utama' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'nama' => 'required|string|max:255',
+            'lokasi' => 'required|string|max:255',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'alamat' => 'required|string',
+            'harga' => 'required|numeric|min:0',
+            'tipe_kos' => 'required|string|in:Pria,Wanita,Campur',
+            'deskripsi' => 'required|string',
+            'no_telepon' => 'required|string|max:30',
+            'foto_utama' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
             'foto_2' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'foto_3' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        // 1. Tentukan jalur path folder tujuan & buat jika belum ada
         $targetPath = public_path('foto-kos');
+
         if (!File::exists($targetPath)) {
             File::makeDirectory($targetPath, 0755, true, true);
         }
 
-        // 2. Siapkan variabel penampung nama file foto (default null)
-        $namaFotoUtama = null;
-        $namaFoto2 = null;
-        $namaFoto3 = null;
+        $namaFotoUtama = $this->uploadFoto($request, 'foto_utama', $targetPath, 'utama');
+        $namaFoto2 = $this->uploadFoto($request, 'foto_2', $targetPath, 'pendukung_1');
+        $namaFoto3 = $this->uploadFoto($request, 'foto_3', $targetPath, 'pendukung_2');
 
-        // 3. Proses upload Foto Utama jika ada
-        if ($request->hasFile('foto_utama')) {
-            $file = $request->file('foto_utama');
-            $namaFotoUtama = time() . '_utama.' . $file->getClientOriginalExtension();
-            $file->move($targetPath, $namaFotoUtama);
-        }
-
-        // 4. Proses upload Foto Pendukung 1 jika ada
-        if ($request->hasFile('foto_2')) {
-            $file = $request->file('foto_2');
-            $namaFoto2 = time() . '_2.' . $file->getClientOriginalExtension();
-            $file->move($targetPath, $namaFoto2);
-        }
-
-        // 5. Proses upload Foto Pendukung 2 jika ada
-        if ($request->hasFile('foto_3')) {
-            $file = $request->file('foto_3');
-            $namaFoto3 = time() . '_3.' . $file->getClientOriginalExtension();
-            $file->move($targetPath, $namaFoto3);
-        }
-
-        // 6. Simpan seluruh data ke database
         Kos::create([
             'nama' => $request->nama,
             'lokasi' => $request->lokasi,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
             'alamat' => $request->alamat,
             'harga' => $request->harga,
             'tipe_kos' => $request->tipe_kos,
@@ -191,33 +222,35 @@ class SipkosController extends Controller
             'kamar_mandi_dalam' => $request->has('kamar_mandi_dalam') ? 1 : 0,
             'deskripsi' => $request->deskripsi,
             'no_telepon' => $request->no_telepon,
-            'foto' => $namaFotoUtama, // Tetap masuk ke kolom 'foto' lama di database
-            'foto_2' => $namaFoto2,   // Masuk ke kolom baru 'foto_2'
-            'foto_3' => $namaFoto3,   // Masuk ke kolom baru 'foto_3'
+            'foto' => $namaFotoUtama,
+            'foto_2' => $namaFoto2,
+            'foto_3' => $namaFoto3,
         ]);
 
-        return redirect()->route('admin')->with('sukses', 'Kos Berhasil Ditambahkan!');
+        return redirect()
+            ->route('admin')
+            ->with('sukses', 'Kos berhasil ditambahkan dan titik maps sudah tersimpan!');
     }
 
-    // 9. Fungsi Tampil Form Edit Kos
     public function edit($id)
     {
         $kos = Kos::findOrFail($id);
+
         return view('admin_edit', compact('kos'));
     }
 
-    // 10. Fungsi Memperbarui Data Kos
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama' => 'required',
-            'lokasi' => 'required',
-            'alamat' => 'required',
-            'harga' => 'required|numeric',
-            'tipe_kos' => 'required',
-            'deskripsi' => 'required',
-            'no_telepon' => 'required',
-            // Validasi disesuaikan dengan nama input di admin_edit.blade.php
+            'nama' => 'required|string|max:255',
+            'lokasi' => 'required|string|max:255',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'alamat' => 'required|string',
+            'harga' => 'required|numeric|min:0',
+            'tipe_kos' => 'required|string|in:Pria,Wanita,Campur',
+            'deskripsi' => 'required|string',
+            'no_telepon' => 'required|string|max:30',
             'foto_utama' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'foto_2' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'foto_3' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
@@ -225,58 +258,36 @@ class SipkosController extends Controller
 
         $kos = Kos::findOrFail($id);
 
-        // Default pakai nama foto yang sudah ada di database saat ini
+        $targetPath = public_path('foto-kos');
+
+        if (!File::exists($targetPath)) {
+            File::makeDirectory($targetPath, 0755, true, true);
+        }
+
         $namaFotoUtama = $kos->foto;
         $namaFoto2 = $kos->foto_2;
         $namaFoto3 = $kos->foto_3;
 
-        $targetPath = public_path('foto-kos');
-
-        // Pastikan folder tujuan ada di public/foto-kos
-        if (!File::exists($targetPath)) {
-            File::makeDirectory($targetPath, 0755, true, true);
-        }
-
-        // 1. PROSES UPDATE FOTO UTAMA
         if ($request->hasFile('foto_utama')) {
-            // Hapus foto utama lama jika ada di folder
-            if ($kos->foto && File::exists($targetPath . '/' . $kos->foto)) {
-                File::delete($targetPath . '/' . $kos->foto);
-            }
-
-            $file = $request->file('foto_utama');
-            $namaFotoUtama = time() . '_utama.' . $file->getClientOriginalExtension();
-            $file->move($targetPath, $namaFotoUtama);
+            $this->hapusFoto($kos->foto);
+            $namaFotoUtama = $this->uploadFoto($request, 'foto_utama', $targetPath, 'utama');
         }
 
-        // 2. PROSES UPDATE FOTO PENDUKUNG 1
         if ($request->hasFile('foto_2')) {
-            // Hapus foto pendukung 1 lama jika ada di folder
-            if ($kos->foto_2 && File::exists($targetPath . '/' . $kos->foto_2)) {
-                File::delete($targetPath . '/' . $kos->foto_2);
-            }
-
-            $file = $request->file('foto_2');
-            $namaFoto2 = time() . '_2.' . $file->getClientOriginalExtension();
-            $file->move($targetPath, $namaFoto2);
+            $this->hapusFoto($kos->foto_2);
+            $namaFoto2 = $this->uploadFoto($request, 'foto_2', $targetPath, 'pendukung_1');
         }
 
-        // 3. PROSES UPDATE FOTO PENDUKUNG 2
         if ($request->hasFile('foto_3')) {
-            // Hapus foto pendukung 2 lama jika ada di folder
-            if ($kos->foto_3 && File::exists($targetPath . '/' . $kos->foto_3)) {
-                File::delete($targetPath . '/' . $kos->foto_3);
-            }
-
-            $file = $request->file('foto_3');
-            $namaFoto3 = time() . '_3.' . $file->getClientOriginalExtension();
-            $file->move($targetPath, $namaFoto3);
+            $this->hapusFoto($kos->foto_3);
+            $namaFoto3 = $this->uploadFoto($request, 'foto_3', $targetPath, 'pendukung_2');
         }
 
-        // Eksekusi update data ke database
         $kos->update([
             'nama' => $request->nama,
             'lokasi' => $request->lokasi,
+            'latitude' => $request->filled('latitude') ? $request->latitude : $kos->latitude,
+            'longitude' => $request->filled('longitude') ? $request->longitude : $kos->longitude,
             'alamat' => $request->alamat,
             'harga' => $request->harga,
             'tipe_kos' => $request->tipe_kos,
@@ -285,25 +296,29 @@ class SipkosController extends Controller
             'kamar_mandi_dalam' => $request->has('kamar_mandi_dalam') ? 1 : 0,
             'deskripsi' => $request->deskripsi,
             'no_telepon' => $request->no_telepon,
-            'foto' => $namaFotoUtama, // Kolom foto utama
-            'foto_2' => $namaFoto2,   // Kolom foto pendukung 1
-            'foto_3' => $namaFoto3,   // Kolom foto pendukung 2
+            'foto' => $namaFotoUtama,
+            'foto_2' => $namaFoto2,
+            'foto_3' => $namaFoto3,
         ]);
 
-        return redirect()->route('admin')->with('sukses', 'Data Kos Berhasil Diperbarui!');
+        return redirect()
+            ->route('admin')
+            ->with('sukses', 'Data kos berhasil diperbarui!');
     }
-    // 11. Fungsi Hapus Kos
+
     public function destroy($id)
     {
         $kos = Kos::findOrFail($id);
 
-        // Hapus foto fisik saat data kos dihapus
-        if ($kos->foto && file_exists(public_path('foto-kos/' . $kos->foto))) {
-            unlink(public_path('foto-kos/' . $kos->foto));
-        }
+        $this->hapusFoto($kos->foto);
+        $this->hapusFoto($kos->foto_2);
+        $this->hapusFoto($kos->foto_3);
 
         $kos->delete();
-        return redirect()->route('admin')->with('sukses', 'Data Kos Berhasil Dihapus!');
+
+        return redirect()
+            ->route('admin')
+            ->with('sukses', 'Data kos berhasil dihapus!');
     }
 
     public function downloadBookingPdf()
@@ -311,12 +326,40 @@ class SipkosController extends Controller
         $booking = session('last_booking');
 
         if (!$booking) {
-            return redirect()->route('my.bookings')
+            return redirect()
+                ->route('my.bookings')
                 ->with('error', 'Tidak ada data booking.');
         }
 
         $pdf = Pdf::loadView('booking_pdf', compact('booking'));
 
         return $pdf->download('booking-kos.pdf');
+    }
+
+    private function uploadFoto(Request $request, string $field, string $targetPath, string $label): ?string
+    {
+        if (!$request->hasFile($field)) {
+            return null;
+        }
+
+        $file = $request->file($field);
+        $namaFile = time() . '_' . uniqid() . '_' . $label . '.' . $file->getClientOriginalExtension();
+
+        $file->move($targetPath, $namaFile);
+
+        return $namaFile;
+    }
+
+    private function hapusFoto(?string $namaFile): void
+    {
+        if (!$namaFile) {
+            return;
+        }
+
+        $path = public_path('foto-kos/' . $namaFile);
+
+        if (File::exists($path)) {
+            File::delete($path);
+        }
     }
 }

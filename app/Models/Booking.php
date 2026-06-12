@@ -7,14 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Booking extends Model
 {
     protected $fillable = [
+        'kode_booking',
         'kos_id',
-        'nama_penyewa',
         'tanggal_checkin',
         'durasi',
         'jasa_pindahan',
         'nama_jasa_pindahan',
         'total_harga',
-        'status'
+        'metode_pembayaran',
+        'status_pembayaran',
+        'bukti_pembayaran',
+        'status',
     ];
 
     public function kos()
