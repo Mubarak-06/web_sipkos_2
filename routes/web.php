@@ -23,16 +23,28 @@ Route::get('/', function () {
 // AUTH
 // ===============================
 Route::middleware('guest')->group(function () {
-    Route::get('/login/user', [AuthController::class, 'showUserLogin'])->name('login.user');
-    Route::post('/login/user', [AuthController::class, 'loginUser'])->name('login.user.submit');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
-    Route::get('/login/admin', [AuthController::class, 'showAdminLogin'])->name('login.admin');
-    Route::post('/login/admin', [AuthController::class, 'loginAdmin'])->name('login.admin.submit');
+    Route::get('/login/user', function () {
+        return redirect()->route('login');
+    })->name('login.user');
+
+    Route::post('/login/user', [AuthController::class, 'login'])->name('login.user.submit');
+
+    Route::get('/login/admin', function () {
+        return redirect()->route('login');
+    })->name('login.admin');
+
+    Route::post('/login/admin', [AuthController::class, 'login'])->name('login.admin.submit');
 
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 });
 
+// ===============================
+// LOGOUT
+// ===============================
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
@@ -47,7 +59,6 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         ->whereNumber('id')
         ->name('kos.show');
 
-    // PENTING: route PDF harus di atas /booking/{id}
     Route::get('/booking/pdf', [SipkosController::class, 'downloadBookingPdf'])
         ->name('booking.pdf');
 
@@ -59,9 +70,11 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         ->whereNumber('id')
         ->name('booking.store');
 
-    Route::get('/my-bookings', [SipkosController::class, 'myBookings'])->name('my.bookings');
+    Route::get('/my-bookings', [SipkosController::class, 'myBookings'])
+        ->name('my.bookings');
 
-    Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
+    Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])
+        ->name('chatbot.ask');
 });
 
 // ===============================
@@ -70,7 +83,8 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/', [SipkosController::class, 'admin'])->name('admin');
 
-    Route::post('/kos', [SipkosController::class, 'store'])->name('kos.store');
+    Route::post('/kos', [SipkosController::class, 'store'])
+        ->name('kos.store');
 
     Route::get('/kos/{id}/edit', [SipkosController::class, 'edit'])
         ->whereNumber('id')

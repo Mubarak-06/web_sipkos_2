@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,14 +15,11 @@
         <div class="max-w-7xl mx-auto px-6 py-8">
             <nav class="flex items-center justify-between">
                 <h1 class="text-3xl font-black text-white tracking-wider">SIPKOS</h1>
+
                 <div class="flex gap-3">
-                    <a href="{{ route('login.user') }}"
+                    <a href="{{ route('login') }}"
                         class="px-5 py-2.5 rounded-xl bg-white text-blue-600 font-bold shadow hover:bg-slate-100 transition">
-                        Login Pengguna
-                    </a>
-                    <a href="{{ route('login.admin') }}"
-                        class="px-5 py-2.5 rounded-xl border border-white text-white font-bold hover:bg-white/10 transition">
-                        Login Admin
+                        Masuk ke SIPKOS
                     </a>
                 </div>
             </nav>
@@ -47,7 +44,8 @@
                             class="px-7 py-4 rounded-2xl bg-white text-blue-600 font-extrabold shadow-lg hover:scale-[1.02] transition">
                             Daftar Sekarang
                         </a>
-                        <a href="{{ route('login.user') }}"
+
+                        <a href="{{ route('login') }}"
                             class="px-7 py-4 rounded-2xl border border-white text-white font-extrabold hover:bg-white/10 transition">
                             Mulai Cari Kos
                         </a>
