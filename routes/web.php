@@ -33,17 +33,32 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 });
 
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
 
 // ===============================
 // USER AREA
 // ===============================
 Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/home', [SipkosController::class, 'index'])->name('home');
-    Route::get('/kos/{id}', [SipkosController::class, 'show'])->name('kos.show');
-    Route::get('/booking/{id}', [SipkosController::class, 'bookingForm'])->name('kos.booking');
-    Route::post('/booking/{id}', [SipkosController::class, 'storeBooking'])->name('booking.store');
-    Route::get('/booking/pdf', [SipkosController::class, 'downloadBookingPdf'])->name('booking.pdf');
+
+    Route::get('/kos/{id}', [SipkosController::class, 'show'])
+        ->whereNumber('id')
+        ->name('kos.show');
+
+    // PENTING: route PDF harus di atas /booking/{id}
+    Route::get('/booking/pdf', [SipkosController::class, 'downloadBookingPdf'])
+        ->name('booking.pdf');
+
+    Route::get('/booking/{id}', [SipkosController::class, 'bookingForm'])
+        ->whereNumber('id')
+        ->name('kos.booking');
+
+    Route::post('/booking/{id}', [SipkosController::class, 'storeBooking'])
+        ->whereNumber('id')
+        ->name('booking.store');
+
     Route::get('/my-bookings', [SipkosController::class, 'myBookings'])->name('my.bookings');
 
     Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
@@ -54,8 +69,18 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 // ===============================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/', [SipkosController::class, 'admin'])->name('admin');
+
     Route::post('/kos', [SipkosController::class, 'store'])->name('kos.store');
-    Route::get('/kos/{id}/edit', [SipkosController::class, 'edit'])->name('kos.edit');
-    Route::put('/kos/{id}', [SipkosController::class, 'update'])->name('kos.update');
-    Route::delete('/kos/{id}', [SipkosController::class, 'destroy'])->name('kos.destroy');
+
+    Route::get('/kos/{id}/edit', [SipkosController::class, 'edit'])
+        ->whereNumber('id')
+        ->name('kos.edit');
+
+    Route::put('/kos/{id}', [SipkosController::class, 'update'])
+        ->whereNumber('id')
+        ->name('kos.update');
+
+    Route::delete('/kos/{id}', [SipkosController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('kos.destroy');
 });

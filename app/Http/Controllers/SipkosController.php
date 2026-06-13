@@ -78,9 +78,13 @@ class SipkosController extends Controller
             'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
         ], [
             'tanggal_checkin.required' => 'Tanggal check-in wajib diisi.',
+            'durasi.required' => 'Durasi sewa wajib diisi.',
+            'durasi.integer' => 'Durasi harus berupa angka.',
+            'durasi.min' => 'Durasi minimal 1 bulan.',
             'metode_pembayaran.required' => 'Metode pembayaran wajib dipilih.',
             'bukti_pembayaran.required' => 'Bukti pembayaran wajib diupload.',
             'bukti_pembayaran.image' => 'Bukti pembayaran harus berupa gambar.',
+            'bukti_pembayaran.mimes' => 'Format bukti pembayaran harus jpeg, png, jpg, atau webp.',
             'bukti_pembayaran.max' => 'Ukuran bukti pembayaran maksimal 2MB.',
         ]);
 
@@ -142,6 +146,7 @@ class SipkosController extends Controller
                 'durasi' => $durasi,
                 'jasa_pindahan' => $jasaPindahan,
                 'nama_jasa_pindahan' => $jasaPindahan ? $request->input('nama_jasa_pindahan') : null,
+                'biaya_jasa_pindahan' => $biayaJasaPindahan,
                 'total_harga' => $totalHarga,
                 'metode_pembayaran' => $request->metode_pembayaran,
                 'status_pembayaran' => 'Menunggu Verifikasi Admin',
@@ -151,11 +156,14 @@ class SipkosController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'message' => 'Booking berhasil dibuat.',
             'kode_booking' => $kodeBooking,
             'no_wa' => $kos->no_telepon,
             'metode_pembayaran' => $request->metode_pembayaran,
             'status_pembayaran' => 'Menunggu Verifikasi Admin',
             'total_harga' => $totalHarga,
+            'pdf_url' => route('booking.pdf'),
+            'my_booking_url' => route('my.bookings'),
         ]);
     }
 
@@ -328,12 +336,16 @@ class SipkosController extends Controller
         if (!$booking) {
             return redirect()
                 ->route('my.bookings')
-                ->with('error', 'Tidak ada data booking.');
+                ->with('error', 'Tidak ada data booking untuk dicetak.');
         }
 
-        $pdf = Pdf::loadView('booking_pdf', compact('booking'));
+        $kodeBooking = $booking['kode_booking'] ?? 'booking-kos';
+        $namaFile = 'bukti-booking-' . Str::slug($kodeBooking) . '.pdf';
 
-        return $pdf->download('booking-kos.pdf');
+        $pdf = Pdf::loadView('booking_pdf', compact('booking'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download($namaFile);
     }
 
     private function uploadFoto(Request $request, string $field, string $targetPath, string $label): ?string
