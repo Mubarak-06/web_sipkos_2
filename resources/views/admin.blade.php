@@ -417,35 +417,50 @@
 
     <script>
         $(document).ready(function () {
-            $('#tabelKos').DataTable({
-                responsive: true,
-                pageLength: 5,
-                language: {
-                    search: "Cari Kos:",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-                    zeroRecords: "Data tidak ditemukan",
-                    paginate: {
-                        previous: "Sebelumnya",
-                        next: "Berikutnya"
-                    }
-                }
-            });
 
-            $('#tabelBooking').DataTable({
-                responsive: true,
-                pageLength: 5,
-                language: {
-                    search: "Cari Booking:",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-                    zeroRecords: "Data booking belum ada",
-                    paginate: {
-                        previous: "Sebelumnya",
-                        next: "Berikutnya"
-                    }
+            if ($('#tabelKos').length) {
+                if ($.fn.DataTable.isDataTable('#tabelKos')) {
+                    $('#tabelKos').DataTable().clear().destroy();
                 }
-            });
+
+                $('#tabelKos').DataTable({
+                    responsive: true,
+                    pageLength: 5,
+                    destroy: true,
+                    language: {
+                        search: "Cari Kos:",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                        zeroRecords: "Data tidak ditemukan",
+                        paginate: {
+                            previous: "Sebelumnya",
+                            next: "Berikutnya"
+                        }
+                    }
+                });
+            }
+
+            if ($('#tabelBooking').length) {
+                if ($.fn.DataTable.isDataTable('#tabelBooking')) {
+                    $('#tabelBooking').DataTable().clear().destroy();
+                }
+
+                $('#tabelBooking').DataTable({
+                    responsive: true,
+                    pageLength: 5,
+                    destroy: true,
+                    language: {
+                        search: "Cari Booking:",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                        zeroRecords: "Data booking belum ada",
+                        paginate: {
+                            previous: "Sebelumnya",
+                            next: "Berikutnya"
+                        }
+                    }
+                });
+            }
         });
     </script>
 
@@ -455,6 +470,8 @@
             const inputLongitude = document.getElementById('inputLongitude');
             const btnLokasiAdmin = document.getElementById('btnLokasiAdmin');
             const mapStatus = document.getElementById('mapStatus');
+
+            if (!document.getElementById('adminMap')) return;
 
             const defaultCenter = [-3.3194, 114.5908];
 
