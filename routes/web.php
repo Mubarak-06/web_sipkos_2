@@ -1,50 +1,61 @@
 <?php
 
-use App\Http\Controllers\SipkosController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SipkosController;
 use App\Http\Controllers\ChatbotController;
-// ==========================================
-// RUTE UTAMA NAVIGASI SIPKOS (CUSTOMER SIDE)
-// ==========================================
-Route::get('/booking/pdf', [SipkosController::class, 'downloadBookingPdf'])->name('booking.pdf');
-// 1. Halaman Utama - diarahkan ke method 'index'
-Route::get('/', [SipkosController::class, 'index'])->name('home');
 
-// 2. Halaman Detail Kos - diarahkan ke method 'show'
-Route::get('/kos/{id}', [SipkosController::class, 'show'])->name('kos.show');
+// ===============================
+// LANDING / SPLASH
+// ===============================
+Route::get('/', function () {
+    if (Auth::check()) {
+        return Auth::user()->role === 'admin'
+            ? redirect()->route('admin')
+            : redirect()->route('home');
+    }
 
-// 3. Tampilan Halaman Formulir Booking - diarahkan ke method 'bookingForm'
-// Ini untuk mengatasi error "Route [kos.booking] not defined" di halaman detail
-Route::get('/booking/{id}', [SipkosController::class, 'bookingForm'])->name('kos.booking');
+    return view('splash');
+})->name('landing');
 
-// 4. Proses Simpan Booking ke Session - diarahkan ke method 'prosesBooking'
-Route::post('/booking/{id}', [SipkosController::class, 'storeBooking'])->name('booking.store');
+// ===============================
+// AUTH
+// ===============================
+Route::middleware('guest')->group(function () {
+    Route::get('/login/user', [AuthController::class, 'showUserLogin'])->name('login.user');
+    Route::post('/login/user', [AuthController::class, 'loginUser'])->name('login.user.submit');
 
+    Route::get('/login/admin', [AuthController::class, 'showAdminLogin'])->name('login.admin');
+    Route::post('/login/admin', [AuthController::class, 'loginAdmin'])->name('login.admin.submit');
 
-// 5. Halaman Riwayat Sesi Booking Anda - diarahkan ke method 'myBookings'
-Route::get('/my-bookings', [SipkosController::class, 'myBookings'])->name('my.bookings');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+});
 
-Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
+// ===============================
+// USER AREA
+// ===============================
+Route::middleware(['auth', 'role:user'])->group(function () {
+    Route::get('/home', [SipkosController::class, 'index'])->name('home');
+    Route::get('/kos/{id}', [SipkosController::class, 'show'])->name('kos.show');
+    Route::get('/booking/{id}', [SipkosController::class, 'bookingForm'])->name('kos.booking');
+    Route::post('/booking/{id}', [SipkosController::class, 'storeBooking'])->name('booking.store');
+    Route::get('/booking/pdf', [SipkosController::class, 'downloadBookingPdf'])->name('booking.pdf');
+    Route::get('/my-bookings', [SipkosController::class, 'myBookings'])->name('my.bookings');
 
-// ==========================================
-// RUTE DASHBOARD ADMIN (CRUD DATA KOS)
-// ==========================================
+    Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask');
+});
 
-Route::prefix('admin')->group(function () {
-    // Tampilan Dashboard Admin
+// ===============================
+// ADMIN AREA
+// ===============================
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/', [SipkosController::class, 'admin'])->name('admin');
-    
-    // Proses Tambah Kos Baru
     Route::post('/kos', [SipkosController::class, 'store'])->name('kos.store');
-    
-    // Tampilan Form Edit Kos
     Route::get('/kos/{id}/edit', [SipkosController::class, 'edit'])->name('kos.edit');
-    
-    // Proses Update Data Kos
     Route::put('/kos/{id}', [SipkosController::class, 'update'])->name('kos.update');
-    
-    // Proses Hapus Data Kos
     Route::delete('/kos/{id}', [SipkosController::class, 'destroy'])->name('kos.destroy');
-
 });
